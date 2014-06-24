@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block head %}
+{{ wizard.form.media }}
+{% endblock %}
+
+{% block content %}
+
+<h2><a href="{% url 'example:contact_list' %}">Go Back to Main List</a></h2>
+
+
+<p>Thanks for submiting the form with the below data:</p>
+
+{% comment %}
+{% if form_data %}
+	{% for form in form_data %}
+		{{form}}
+	{% endfor %}
+{% endif %}
+{% endcomment %}
+
+
+<table>
+<tr>
+<th>id</th>
+<th>subject</th>
+<th>sender</th>
+<th>message</th>
+<th>amt_paid</th>
+</tr>
+{% if submissions %}
+{% for eachrow in submissions %}
+	<tr>
+	<td><a href="{% url 'example:contact_edit' eachrow.id %}">{{eachrow.id}}</a></td>
+	<td>{{eachrow.subject}}</td>
+	<td>{{eachrow.sender}}</td>
+	<td>{{eachrow.message}}</td>
+	<td>{{eachrow.amt_paid}}</td>
+	</tr>
+{% endfor %}
+{% else %}
+	There's no submissions history available for this account
+{% endif %}
+</table>
+<p>
+<a href="{% url 'example:contact_add' %}">Create a new</a>
+</p>
+
+
+{% endblock %}

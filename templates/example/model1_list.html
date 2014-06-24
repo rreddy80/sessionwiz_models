@@ -1,0 +1,44 @@
+
+<h2 align="right"><i>{{now}}</i></h2>
+
+{# .... **Normal content list, maybe a table** .... #}
+{% if object_list %}
+	<table>
+	<tr>
+	<th>id</th>
+	<th>subject</th>
+	<th>sender</th>
+	<th>message</th>
+	<th>amt_paid</th>
+	</tr>
+	{% for eachrow in object_list %}
+		<tr>
+		<td><a href="{% url 'example:contact_edit' eachrow.id %}">{{eachrow.id}}</a></td>
+		<td>{{eachrow.subject}}</td>
+		<td>{{eachrow.sender}}</td>
+		<td>{{eachrow.message}}</td>
+		<td>{{eachrow.amt_paid}}</td>
+		</tr>
+	{% endfor %}
+	</table>
+    {# .... **Now the pagination section** .... #}
+    {% if is_paginated %}
+        <div class="pagination">
+            <span class="page-links">
+                {% if page_obj.has_previous %}
+                    <a href="/example/contact?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="page-current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="/example/contact?page={{ page_obj.next_page_number }}">next</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+{% else %}
+    <h3>My statements</h3>
+    <p>No statements found!!! :(</p>
+{% endif %}
+{# .... **More content, footer, etc.** .... #}

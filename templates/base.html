@@ -1,0 +1,25 @@
+{% load i18n staticfiles %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
+    <head>
+        <meta charset="UTF-8">
+		{% block extrahead %}{% endblock %}
+    </head>
+
+    <body>
+				<!-- Main content -->
+				<section class="content">
+					<div>
+					    <!-- Content -->
+				        {% block content %}
+						{% endblock %}
+					    <!-- END Content -->
+					</div>
+					<!-- END Container -->
+				</section><!-- /.content -->
+			</aside><!-- /.right-side -->
+
+	</div><!-- ./wrapper -->
+		</div>
+
+    </body>
+</html>

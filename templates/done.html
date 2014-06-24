@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n example_filters %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+
+<h2>Please Review and Confirm</h2>
+
+<p>The details submitted below would be sent to your agency. If you have any issues with it, feel free to update these by editing the details</p>
+
+<table>
+<tr>
+<th>id</th>
+<th>subject</th>
+<th>sender</th>
+<th>message</th>
+<th>amt_paid</th>
+</tr>
+<tr>
+<td>{{thissubmission|get:"id"}}</th>
+<td>{{thissubmission|get:"subject"}}</td>
+<td>{{thissubmission|get:"sender"}}</td>
+<td>{{thissubmission|get:"message"}}</td>
+<td>{{thissubmission|get:"amt_paid"}}</td>
+</tr>
+
+</table>
+
+<p>
+<a href="{% url 'example:submit_confirm' %}">Confirm and Submit</a>
+<a href="{% url 'example:contact_list' %}">Submit later</a>
+</p>
+{% endblock %}
