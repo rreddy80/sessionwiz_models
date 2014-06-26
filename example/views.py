@@ -1,8 +1,10 @@
 # Create your views here.
-
+from collections import OrderedDict
 from django.shortcuts import render_to_response, get_object_or_404, HttpResponseRedirect
 from django.contrib.formtools.wizard.views import SessionWizardView
 from django.contrib.formtools.wizard.forms import ManagementForm
+from django.contrib.formtools.wizard import storage
+from django.contrib.formtools.wizard.storage import get_storage
 from django.forms.models import model_to_dict
 from django.core.mail import send_mail
 from django.views.generic.list import ListView
@@ -19,6 +21,21 @@ from wizards.session import SessionWizard
 
 formlist = [ContactForm1, ContactForm2, ContactForm3]
 
+def percentage(part, whole):
+    return round(100 * float(part)/float(whole), 2)
+
+
+def get_dict_values(given_context):
+    result_dict = {'0': {'subject': given_context['subject']
+                           },
+                     '1': {'sender': given_context['sender'],
+                           },
+                     '2': {'message': given_context['message'],
+                           'amt_paid': given_context['amt_paid'],
+                           },
+                     }
+    return result_dict
+
 
 class StatementView(ListView):
     model = Model1
@@ -29,8 +46,6 @@ class StatementView(ListView):
         context['now'] = datetime.datetime.now()
         return context
 
-def percentage(part, whole):
-    return round(100 * float(part)/float(whole), 2)
 
 class ContactWizard(SessionWizardView):
     #instance = None
@@ -61,34 +76,39 @@ class ContactWizard(SessionWizardView):
             #logr.debug("id from dict:" + str(self.initial_dict['0']['id']))
             #logr.debug("id from form_list:" + str(form_list[0].cleaned_data))
             #statementid = form_list[0].cleaned_data['id']
+            #statementid = self.kwargs['statement_id']
             statementid = self.initial_dict['0']['id']
-            #logr.debug("Before fetching statement - - Reddy")
             statement = get_object_or_404(Model1, pk=statementid)
-            #logr.debug("I am going to set the instance - - Reddy")
             instance = statement
         except:
             statement = None
-            #logr.debug("I CANNOT set the instance, creating NEW - - Reddy")
             instance = Model1()
 
         # process form data here
         for form in form_list:
-            for field, value in form.cleaned_data.iteritems():
-                setattr(instance, field, value)        
+            logr.debug(form)
+            logr.debug(form_list)
+            if not form is None:
+                if isinstance(form, dict):
+                    for field, value in form.iteritems():   # for field, value in form.cleaned_data.iteritems():
+                        setattr(instance, field, value)
+                else:
+                    for field, value in form.cleaned_data.iteritems():
+                        setattr(instance, field, value)
         instance.save()
 
         #
-        logr.debug("below is the new/ existing id")
-        logr.debug(instance.id)
+        #logr.debug("below is the new/ existing id")
+        #logr.debug(instance.id)
         
-        form_data = [form.cleaned_data for form in form_list]
+        #form_data = [form.cleaned_data for form in form_list]
 
         # lets grab some session data
-        logr.debug("--------------------- * START * SESSION DATA ---------------------")
-        for key in ('form_data', 'wizard_id'):
-            if key in self.request.session:
-                logr.debug(self.request.session[key])
-        logr.debug("--------------------- * END * SESSION DATA ---------------------")
+        #logr.debug("--------------------- * START * SESSION DATA ---------------------")
+        #for key in ('form_data', 'wizard_id'):
+        #    if key in self.request.session:
+        #        logr.debug(self.request.session[key])
+        #logr.debug("--------------------- * END * SESSION DATA ---------------------")
 
         # lets grab WizardView.get_all_cleaned_data()
         logr.debug("--------------------- * START * all cleaned data from all forms ---------")
@@ -97,7 +117,7 @@ class ContactWizard(SessionWizardView):
         
         #submissions = Model1.objects.all()
         # lets grab data off the current instance
-        logr.debug("--------- grabbing current instance ---------")
+        #logr.debug("--------- grabbing current instance ---------")
         this_statement = Model1.objects.get(pk=instance.id)
         #logr.debug(this_statement)
         #logr.debug(this_statement.id)
@@ -113,22 +133,60 @@ class ContactWizard(SessionWizardView):
             #'form_data': form_data,
             #'submissions': submissions,            
         })
+    
+
+    def post(self, *args, **kwargs):
+        """
+        This method handles POST requests.
+
+        The wizard will render either the current step (if form validation
+        wasn't successful), the next step (if the current step was stored
+        successful) or the done view (if no more steps are available)
+        """
+        if 'save_comeback_later' in self.request.POST:
+             if self.request.POST['save_comeback_later']:
+                # get form_data from all the forms
+                final_forms = OrderedDict()
+                for form_key in self.get_form_list():
+##                    form_obj = self.get_form(step=form_key,
+##                                             data=self.storage.get_step_data(form_key),
+##                                             files=self.storage.get_step_files(form_key))
+##                    #form_obj = self.get_form(data=self.request.POST, files=self.request.FILES)    
+##                    #logr.debug("list of forms data - " + str(form_key) + ": " + str(form_obj))
+##                    if not form_obj.is_valid():
+##                        logr.debug("INVALID DATA FOUND, calling revalidation failure")
+##                        logr.debug(self.get_all_cleaned_data())
+##                        logr.debug(form_obj)
+##                        return self.render_revalidation_failure(form_key, form_obj, **kwargs)
+                    form_obj = self.get_cleaned_data_for_step(form_key)
+                    final_forms[form_key] = form_obj
+                #logr.debug("value is TRUE")
+                done_response = self.done(final_forms.values(), form_dict=final_forms, **kwargs)
+                self.storage.reset()
+                return done_response
+        return super(ContactWizard, self).post(self, *args, **kwargs)
+
 
 def edit_wizard(request, statement_id):
     statement = get_object_or_404(Model1, pk=statement_id)
-
-    initialvalues = {'0': {'id': statement.id,
-                           'subject': statement.subject,
-                           },
-                     '1': {'sender': statement.sender,
-                           },
-                     '2': {'message': statement.message,
-                           'amt_paid': statement.amt_paid,
-                           },
-                     }
-    #logr.debug(initialvalues)
-    
-    form = ContactWizard.as_view(formlist, initial_dict=initialvalues)
+    initial_values = {
+        '0':
+        {
+            'subject': statement.subject,
+            'id': statement.id,
+            },
+        '1':
+        {
+            'sender': statement.sender,
+            },
+        '2':
+        {
+            'message': statement.message,
+            'amt_paid': statement.amt_paid,
+            },
+        }
+    # return the wizard
+    form = ContactWizard.as_view(formlist, initial_dict=initial_values)
     return form(context=RequestContext(request), request=request)
 
 
@@ -143,64 +201,6 @@ def submit_wizard(request):
     return HttpResponseRedirect('/example/contact/')
 
 '''
-    def post(self, *args, **kwargs):
-        """
-        This method handles POST requests.
-
-        The wizard will render either the current step (if form validation
-        wasn't successful), the next step (if the current step was stored
-        successful) or the done view (if no more steps are available)
-        """
-        # Look for a wizard_goto_step element in the posted data which
-        # contains a valid step name. If one was found, render the requested
-        # form. (This makes stepping back a lot easier).
-        wizard_goto_step = self.request.POST.get('wizard_goto_step', None)
-        logr.debug("+++++ current post step# " + str(wizard_goto_step))
-        if wizard_goto_step and wizard_goto_step in self.get_form_list():
-            return self.render_goto_step(wizard_goto_step)
-
-        # Check if form was refreshed
-        management_form = ManagementForm(self.request.POST, prefix=self.prefix)
-        if not management_form.is_valid():
-            raise ValidationError(
-                _('ManagementForm data is missing or has been tampered.'),
-                code='missing_management_form',
-            )
-
-        form_current_step = management_form.cleaned_data['current_step']
-        if (form_current_step != self.steps.current and
-                self.storage.current_step is not None):
-            # form refreshed, change current step
-            self.storage.current_step = form_current_step
-
-        # get the form for the current step
-        form = self.get_form(data=self.request.POST, files=self.request.FILES)
-
-        # and try to validate
-        if form.is_valid():
-            # if the form is valid, store the cleaned data and files.
-            self.storage.set_step_data(self.steps.current, self.process_step(form))
-            self.storage.set_step_files(self.steps.current, self.process_step_files(form))
-
-            #
-            logr.debug("printing request post dict")
-            logr.debug(self.request.POST)
-            if 'save_comeback_later' in self.request.POST:
-                logr.debug("printing specific value")
-                logr.debug(self.request.POST['save_comeback_later'])
-            logr.debug("printing management form details")
-            for k,v in management_form.cleaned_data.iteritems():
-                logr.debug(k + ": " + management_form.cleaned_data[k])
-            
-            # check if the current step is the last step
-            if (self.steps.current == self.steps.last) or ('save_comeback_later' in self.request.POST):
-                # no more steps, render done view
-                return self.render_done(form, **kwargs)
-            else:
-                # proceed to the next step
-                return self.render_next_step(form)
-        return self.render(form)
-
 def quit_wizard(request):
     # save data in the current form
     try:

@@ -13,13 +13,18 @@
 
 <p>Step {{ wizard.steps.step1 }} of {{ wizard.steps.count }}</p>
 
-{% for field in form %}
-	{{field.error}}
-{% endfor %}
+
 
 {% comment %}<form action="{% url 'example:contact_add' %}" method="post">{% endcomment %}
 <form method="post">
 {% csrf_token %}
+
+{% for field in form %}
+	{{field.errors}}
+{% endfor %}
+
+{{ form.non_field_errors }}
+
 <table>
 {{ wizard.management_form }}
 {% if wizard.form.forms %}
@@ -36,6 +41,6 @@
 <button name="wizard_goto_prev_step" type="submit" value="{{ wizard.steps.prev }}">{% trans "prev step" %}</button>
 <button type="submit" name="save_comeback_later" value="True">{% trans "Quit" %}</button>
 {% endif %}
-<input type="submit" value="{% trans "submit" %}"/>
+<input type="submit" name="proceed" value="{% trans "submit" %}"/>
 </form>
 {% endblock %}
