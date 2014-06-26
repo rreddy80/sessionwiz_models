@@ -1,0 +1,12 @@
+venv
+*~
+*.swp
+*.swo
+*local.py
+*old.html
+*.pyc
+staticfiles
+images
+*.db
+logs
+*.txt
