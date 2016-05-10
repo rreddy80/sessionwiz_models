@@ -86,7 +86,7 @@ STATICFILES_FINDERS = (
 )
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'ilpr$5yr_sk##yesc_red+a3c9a2=p=&qf0!zv^=mw4*vk40wo'
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -101,8 +101,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = '587'
-EMAIL_HOST_USER = 'sumareddy29@gmail.com'
-EMAIL_HOST_PASSWORD = 'BujjiThalli9'
+EMAIL_HOST_USER = os.environ['EMAIL_ADDR']
+EMAIL_HOST_PASSWORD = os.environ['EMAIL_PASS']
 
 
 MIDDLEWARE_CLASSES = (
